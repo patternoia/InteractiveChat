@@ -1,0 +1,110 @@
+{
+  "output_file": "settings/settings.json",
+  "Clear": {
+    "type": "button",
+    "label": "Clear Chat",
+    "tooltip": "Be quick to remove profanity and insults from screen",
+    "function": "ClearChat",
+    "wsevent": "EVENT_CHAT_CLEAR",
+    // "group": "Core"
+  },
+  "Freedom": {
+    "type": "checkbox",
+    "value": false,
+    "label": "Freedom Of Speech",
+    "tooltip": "When checked all chat will be translated to overlay with no cost and cooldowns",
+    "group": "Appearance"
+  },
+  "Bttv": {
+    "type": "checkbox",
+    "value": true,
+    "label": "BTTV Emotes",
+    "tooltip": "When checked Better TwitchTV and FrankerFaceZ emotes will be displayed",
+    "group": "Appearance"
+  },
+  "Direction": {
+  "type": "dropdown",
+  "label": "Scroll direction",
+  "value": "down",
+  "tooltip": "Direction in which chat messages are scrolled",
+  "items": ["down","up","left"],
+  "group": "Appearance"
+  },
+  "Command": {
+    "type": "textbox",
+    "value": "!say",
+    "label": "Command",
+    "tooltip": "The command that will be responded to.",
+    "group": "Core"
+  },
+  "Response": {
+      "type": "textbox",
+      "value": "Pong!",
+      "label": "Response",
+      "tooltip": "Optional message that will be sent to chat when using the command.",
+      "group": "Core"
+  },
+  "Permission": {
+    "type": "dropdown",
+    "value": "everyone",
+    "items": ["everyone","moderator","subscriber","user_specific","editor"],
+    "label": "Permission",
+    "tooltip": "Who is able to use the command",
+    "group": "Core"
+  },
+  "Cost": {
+    "type": "numberbox",
+    "value": 0,
+    "label": "Command cost",
+    "tooltip": "Cost of commands in channel points",
+    "group": "Core"
+  },
+  "Info": {
+    "type": "textbox",
+    "value": "",
+    "label": "Info",
+    "tooltip": "This field should only be filled when using the user_specific permission.",
+    "group": "Core"
+  },
+  "CooldownUser": {
+    "type": "slider",
+    "value": 4,
+    "min": 0,
+    "max": 100,
+    "ticks": 1,
+    "label": "User cooldown (seconds)",
+    "tooltip": "How long the command should go on cooldown for the same user",
+    "group": "Core"
+  },
+  "CooldownGlobal": {
+    "type": "slider",
+    "value": 4,
+    "min": 0,
+    "max": 100,
+    "ticks": 1,
+    "label": "Global cooldown (seconds)",
+    "tooltip": "How long the command should go on cooldown for all users",
+    "group": "Core"
+  },
+  "CooldownResponse": {
+    "type": "textbox",
+    "value": "",
+    "label": "Cooldown Response",
+    "tooltip": "Optional response message if command is in cooldown",
+    "group": "Core"
+  },
+  "BadWords": {
+    "type": "textbox",
+    "value": "",
+    "label": "Bad words",
+    "tooltip": "Put here the bad words you want to filter out. Comma separated, e.g.: another,bad,word",
+    "group": "Core"
+  },
+  "ChannelId": {
+    "type": "numberbox",
+    "value": 0,
+    "label": "Channel Id",
+    "tooltip": "Speeds up fetching channel badges and bttv emotes",
+    "group": "Core"
+  }
+}

@@ -1,0 +1,223 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+  <script src="API_Key.js"></script>
+  <script src="ChatMessage.js"></script>
+  <script src="../settings/settings.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="https://static.twitchcdn.net/assets/core-35a668e79c8e18b52098.css">
+  <link rel="stylesheet" type="text/css" href="https://static.twitchcdn.net/assets/pages.channel.components.channel-root-95847013b84c8448bf56.css">
+  <link rel="stylesheet" type="text/css" href="https://cdn.betterttv.net/betterttv.css?v=7.2.78">
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+</head>
+<body>
+  <div id="app">
+  </div>
+</body>
+
+<script>
+  let ChatMessageClass = Vue.extend(chatMessage)
+  var badges = {badge_sets: {}};
+  var bttv = [];
+
+  var fetchBadges = () => {
+    badges = {badge_sets: {}}
+    let endpoints = [fetch(`https://badges.twitch.tv/v1/badges/global/display`)]
+    if (settings.ChannelId) {
+      endpoints.push(fetch(`https://badges.twitch.tv/v1/badges/channels/${settings.ChannelId}/display`))
+    }
+
+    Promise.all(
+      endpoints
+    ).then(response => Promise.all(response.map(res => res.json())))
+      .then(json => json.forEach(j => Object.assign(badges.badge_sets, j.badge_sets)))
+  }
+
+  var fetchBttv = () => {
+    bttv = [];
+    let endpoints = [fetch(`https://api.betterttv.net/3/cached/emotes/global`),
+                     fetch(`https://api.betterttv.net/3/cached/frankerfacez/emotes/global`)]
+    if (settings.ChannelId) {
+      endpoints.push(fetch(`https://api.betterttv.net/3/cached/users/twitch/${settings.ChannelId}`))
+      endpoints.push(fetch(`https://api.betterttv.net/3/cached/frankerfacez/users/twitch/${settings.ChannelId}`))
+    }
+
+    Promise.all(
+      endpoints
+    ).then(response => Promise.all(response.map(res => res.json())))
+     .then(json => json.forEach(j => bttv.push.apply(bttv, j.sharedEmotes ? j.sharedEmotes.concat(j.channelEmotes) : j)))
+     // .then(() => vm.addChatLine('@badge-info=;badges=;color=#008000;display-name=system;emote-only=1;emotes=;flags=;id=0;mod=0;room-id=0;subscriber=0;tmi-sent-ts=0;turbo=0;user-id=0;user-type= :test!test@test.tmi.twitch.tv PRIVMSG #test :Bttv loaded FeelsAmazingMan'))
+  }
+
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      last_event: "",
+      my_event: "",
+      serviceUrl: "",
+      socket: Object,
+      show: true,
+      idCounter: 0,
+      lines: {}
+    },
+
+    methods: {
+      addChatLine(raw, command) {
+        if (!raw.length)
+          return;
+
+        let instance = new ChatMessageClass({propsData: {
+          raw: raw,
+          command: settings.Command,
+          slideDir: settings.Direction || 'top',
+          useBttv: settings.Bttv
+        }});
+
+        instance.$mount();
+        this.$el.appendChild(instance.$el);
+      },
+    },
+
+    mounted: function () {
+      fetchBadges();
+      fetchBttv();
+
+      // this.addChatLine('@badge-info=;badges=;color=#008000;display-name=system;emote-only=1;emotes=425618:0-2;flags=;id=;mod=0;room-id=0;subscriber=0;tmi-sent-ts=;turbo=0;user-id=;user-type= :test!test@test.tmi.twitch.tv PRIVMSG #test :LUL Chat loaded');
+
+      if (false) {
+        const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+        let that = this;
+        ws.onopen = function(event) {
+          console.log('INFO: Socket Opened');
+          ws.send('CAP REQ :twitch.tv/commands');
+          ws.send('CAP REQ :twitch.tv/membership');
+          ws.send('CAP REQ :twitch.tv/tags');
+          ws.send('PASS oauth:b60z3npodiq0v3w7t9lk90g0u6skiz1');
+          ws.send('NICK patternoia');
+          ws.send('JOIN #xakoh');
+          ws.send('USER #patternoia');
+        };
+        ws.onerror = function(error) {
+          console.log('ERR: ', error);
+        };
+        ws.onclose = function() {
+          console.log('INFO: Socket Closed');
+        };
+        ws.onmessage = function(event) {
+          if (event.data.indexOf('PRIVMSG') !== -1) {
+            that.addChatLine(event.data);
+          };
+        }
+
+        // return;
+      }
+
+
+      //---------------------------------
+      //  Variables
+      //---------------------------------
+      this.serviceUrl = API_Socket;
+      this.socket = new WebSocket(this.serviceUrl);
+
+      //---------------------------------
+      //  Open Event
+      //---------------------------------
+      this.socket.onopen = function () {
+        // Format your Authentication Information
+        var auth = {
+          author: 'YOUR_NAME',
+          website: 'YOUR_SITE',
+          api_key: API_Key,
+          events: ['EVENT_CHAT', 'EVENT_CHAT_CLEAR', 'EVENT_SETTINGS_UPDATE']
+        };
+
+        //  Send your Data to the server
+        vm.socket.send(JSON.stringify(auth));
+      };
+
+      //---------------------------------
+      //  Error Event
+      //---------------------------------
+      this.socket.onerror = function (error) {
+        //  Something went terribly wrong... Respond?!
+        console.log('Error: ' + error);
+      };
+
+      //---------------------------------
+      //  Message Event
+      //---------------------------------
+      let that = this;
+      this.socket.onmessage = function (message) {
+        let json = JSON.parse(message.data);
+
+        if(json.event == 'EVENT_CHAT') {
+          console.log('Chat message');
+          json.data = JSON.parse(json.data);
+          json.data.raw.split('\n').forEach(partial => that.addChatLine(partial));
+        } else if(json.event == 'EVENT_CHAT_CLEAR') {
+          [...document.getElementsByClassName('chat-line__message')].forEach(el => el.remove());
+          console.log('Chat cleared');
+        } else if(json.event == 'EVENT_SETTINGS_UPDATE') {
+          settings = JSON.parse(json.data);
+          console.log('New settings fetched', json.data);
+        }
+      };
+
+      //---------------------------------
+      //  Message Event
+      //---------------------------------
+      this.socket.onclose = function () {
+        //  Connection has been closed by you or the server
+        console.log("Connection Closed!");
+      };
+    }
+  });
+</script>
+
+<style type="text/css">
+body { background-color: rgba(0, 0, 0, 1); }
+
+.chat-line__message {
+  position: absolute;
+  font-size: 20px;
+  color: rgb(239, 239, 241);
+  font-family: Roobert, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  word-wrap: break-word;
+}
+
+.slide-down-leave-active {
+  top: 0px;
+  transition: all 10s linear;
+}
+.slide-down-enter, .slide-down-leave-to {
+  top: 0px;
+  transform: translateY(1000px);
+}
+
+.slide-up-leave-active {
+  bottom: 0px;
+  transition: all 10s linear;
+}
+.slide-up-enter, .slide-up-leave-to {
+  bottom: 0px;
+  transform: translateY(-1000px);
+}
+
+.slide-left-leave-active {
+  top: 300px;
+  right: calc(-100vw) !important;;
+  transition: all 20s linear;
+}
+
+.slide-left-enter, .slide-left-leave-to {
+  top: 300px;
+  right: calc(-100vw) !important;;
+  transform: translateX(-4000px);
+}
+}
+</style>
+
+</html>

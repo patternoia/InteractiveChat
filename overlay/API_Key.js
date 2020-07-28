@@ -1,0 +1,1 @@
+﻿var API_Key = "71ba75585dba47878e4ce1e29b5d2d77"; var API_Socket = " ws://127.0.0.1:3337/streamlabs";
